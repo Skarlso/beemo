@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -25,14 +24,6 @@ type Hook struct {
 	Payload   []byte
 }
 
-// PullRequest contains information about the PR. All we care about here
-// is the issue_url which will be used by the issue creation API.
-type PullRequest struct {
-	URL      string `json:"url"`
-	ID       int    `json:"id"`
-	IssueURL string `json:"issue_url"`
-}
-
 // Owner is the owner of the repository.
 type Owner struct {
 	Login string `json:"login"`
@@ -45,12 +36,10 @@ type Repository struct {
 }
 
 // Payload contains information about the event like, user, commit id and so on.
-// All we care about for the sake of identification is the repository.
 type Payload struct {
-	Action string      `json:"action"`
-	Number int         `json:"number"`
-	PR     PullRequest `json:"pull_request"`
-	Repo   Repository  `json:"repository"`
+	Action string     `json:"action"`
+	Number int        `json:"number"`
+	Repo   Repository `json:"repository"`
 }
 
 const (
@@ -80,7 +69,7 @@ func verifySignature(secret []byte, signature string, body []byte) bool {
 	return hmac.Equal(expected, actual)
 }
 
-func parse(secret []byte, req *http.Request) (Hook, error) {
+func parseRequest(secret []byte, req *http.Request) (Hook, error) {
 	h := Hook{}
 
 	if h.Signature = req.Header.Get("x-hub-signature"); len(h.Signature) == 0 {
@@ -124,7 +113,7 @@ func GitWebHook(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "GITHUB_WEBHOOK_SECRET is empty")
 	}
 
-	h, err := parse([]byte(secret), c.Request())
+	h, err := parseRequest([]byte(secret), c.Request())
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -139,8 +128,6 @@ func GitWebHook(c echo.Context) error {
 	if err := json.Unmarshal(h.Payload, p); err != nil {
 		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
 	}
-
-	log.Printf("Received: PR Number: %d, IssueURL: %s\n", p.Number, p.PR.IssueURL)
 
 	err = internal.AddLabel(p.Repo.Owner.Login, p.Repo.Name, p.Number)
 	if err != nil {
