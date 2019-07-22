@@ -24,7 +24,8 @@ type GithubClient struct {
 	*github.Client
 }
 
-// MockClient is an exported mock client that can be used to mock the behavior of AddLabel.
+// MockIssueService is an exported mock service that can be used to mock the behavior of AddLabel.
+// TODO: Soon will be replaced by an interface defined service which has the AddLabel functionality.
 var MockIssueService IssuesService
 
 // NewGithubClient creates a wrapper around the github client. This is
