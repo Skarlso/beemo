@@ -58,7 +58,6 @@ func AddLabel(owner, repo string, number int) error {
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	client := NewGithubClient(tc)
-	LogDebug("client created: ", client)
 	_, _, err := client.Issues.AddLabelsToIssue(ctx, owner, repo, number, []string{"good first issue"})
 	if err != nil {
 		return err
