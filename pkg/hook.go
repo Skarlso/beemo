@@ -129,6 +129,10 @@ func GitWebHook(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
 	}
 
+	if p.Action != "opened" {
+		return c.String(http.StatusOK, "skipped; status was not opened but: "+p.Action)
+	}
+
 	err = internal.AddLabel(p.Repo.Owner.Login, p.Repo.Name, p.Number)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
