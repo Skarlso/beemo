@@ -10,9 +10,34 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// NewGithubClient creates a wrapper around the github client.
-func NewGithubClient(httpClient *http.Client) *github.Client {
-	return github.NewClient(httpClient)
+// GithubRepoService is an interface defining the Wrapper Interface
+// needed to test the github client.
+type IssuesService interface {
+	AddLabelsToIssue(ctx context.Context, owner string, repo string, number int, labels []string) ([]*github.Label, *github.Response, error)
+}
+
+// GithubClient is a client that has the ability to replace the actual
+// git client.
+type GithubClient struct {
+	Issues IssuesService
+	*github.Client
+}
+
+// NewGithubClient creates a wrapper around the github client. This is
+// needed in order to decouple gaia from github client to be
+// able to unit test createGithubWebhook and ultimately have
+// the ability to replace github with anything else.
+func NewGithubClient(httpClient *http.Client, issueMock IssuesService) GithubClient {
+	if issueMock != nil {
+		return GithubClient{
+			Issues: issueMock,
+		}
+	}
+	githubClient := github.NewClient(httpClient)
+
+	return GithubClient{
+		Issues: githubClient.Issues,
+	}
 }
 
 // AddLabel adds certain labels to a PR given an issueUrl point to the PR.
@@ -27,7 +52,7 @@ func AddLabel(owner, repo string, number int) error {
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
-	client := NewGithubClient(tc)
+	client := NewGithubClient(tc, nil)
 	LogDebug("client created: ", client)
 	_, _, err := client.Issues.AddLabelsToIssue(ctx, owner, repo, number, []string{"good first issue"})
 	if err != nil {
