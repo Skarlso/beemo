@@ -37,6 +37,13 @@ type Payload struct {
 	Repo Repository `json:"repository"`
 }
 
+const (
+	// Ping event name.
+	Ping = "ping"
+	// Push event name.
+	Push = "push"
+)
+
 func signBody(secret, body []byte) []byte {
 	computed := hmac.New(sha1.New, secret)
 	_, _ = computed.Write(body)
@@ -68,7 +75,10 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 		return Hook{}, errors.New("no event")
 	}
 
-	if h.Event != "push" {
+	if h.Event != Push {
+		if h.Event == Ping {
+			return Hook{Event: "ping"}, nil
+		}
 		return Hook{}, errors.New("invalid event")
 	}
 
@@ -99,11 +109,16 @@ func GitWebHook(c echo.Context) error {
 	}
 
 	h, err := parse([]byte(secret), c.Request())
-	c.Request().Header.Set("Content-type", "application/json")
 
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+
+	if h.Event == "ping" {
+		return c.NoContent(http.StatusOK)
+	}
+
+	c.Request().Header.Set("Content-type", "application/json")
 
 	p := new(Payload)
 	if err := json.Unmarshal(h.Payload, p); err != nil {
