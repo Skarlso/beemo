@@ -38,9 +38,9 @@ type Payload struct {
 }
 
 const (
-	// Ping event name.
+	// Ping event name
 	Ping = "ping"
-	// Push event name.
+	// Push event name
 	Push = "push"
 )
 
