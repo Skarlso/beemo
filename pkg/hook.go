@@ -23,25 +23,27 @@ type Hook struct {
 	Payload   []byte
 }
 
-// Repository contains information about the repository. All we care about
-// here are the possible urls for identification.
-type Repository struct {
-	GitURL  string `json:"git_url"`
-	SSHURL  string `json:"ssh_url"`
-	HTMLURL string `json:"html_url"`
+// PullRequest contains information about the PR. All we care about here
+// is the issue_url which will be used by the issue creation API.
+type PullRequest struct {
+	URL      string `json:"url"`
+	ID       int    `json:"id"`
+	IssueURL string `json:"issue_url"`
 }
 
 // Payload contains information about the event like, user, commit id and so on.
 // All we care about for the sake of identification is the repository.
 type Payload struct {
-	Repo Repository `json:"repository"`
+	Action string      `json:"action"`
+	Number int         `json:"number"`
+	PR     PullRequest `json:"pull_request"`
 }
 
 const (
 	// Ping event name.
 	Ping = "ping"
-	// Push event name.
-	Push = "push"
+	// PullRequest event name.
+	PR = "pull_request"
 )
 
 func signBody(secret, body []byte) []byte {
@@ -75,7 +77,7 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 		return Hook{}, errors.New("no event")
 	}
 
-	if h.Event != Push {
+	if h.Event != PR {
 		if h.Event == Ping {
 			return Hook{Event: "ping"}, nil
 		}
@@ -109,12 +111,11 @@ func GitWebHook(c echo.Context) error {
 	}
 
 	h, err := parse([]byte(secret), c.Request())
-
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	if h.Event == "ping" {
+	if h.Event == Ping {
 		return c.NoContent(http.StatusOK)
 	}
 
@@ -125,7 +126,7 @@ func GitWebHook(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
 	}
 
-	log.Printf("Received: GitURL: %s, SSHURL: %s\n", p.Repo.GitURL, p.Repo.SSHURL)
+	log.Printf("Received: PR Number: %d, IssueURL: %s\n", p.Number, p.PR.IssueURL)
 
 	return c.String(http.StatusOK, "successfully processed event")
 }
