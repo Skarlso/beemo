@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"os"
 
@@ -23,14 +24,17 @@ type GithubClient struct {
 	*github.Client
 }
 
+// MockClient is an exported mock client that can be used to mock the behavior of AddLabel.
+var MockIssueService IssuesService
+
 // NewGithubClient creates a wrapper around the github client. This is
 // needed in order to decouple gaia from github client to be
 // able to unit test createGithubWebhook and ultimately have
 // the ability to replace github with anything else.
-func NewGithubClient(httpClient *http.Client, issueMock IssuesService) GithubClient {
-	if issueMock != nil {
+func NewGithubClient(httpClient *http.Client) GithubClient {
+	if MockIssueService != nil {
 		return GithubClient{
-			Issues: issueMock,
+			Issues: MockIssueService,
 		}
 	}
 	githubClient := github.NewClient(httpClient)
@@ -52,11 +56,12 @@ func AddLabel(owner, repo string, number int) error {
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
-	client := NewGithubClient(tc, nil)
+	client := NewGithubClient(tc)
 	LogDebug("client created: ", client)
 	_, _, err := client.Issues.AddLabelsToIssue(ctx, owner, repo, number, []string{"good first issue"})
 	if err != nil {
 		return err
 	}
+	log.Println("Label successfully added to PR.")
 	return nil
 }

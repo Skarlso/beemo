@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,12 +12,40 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/google/go-github/github"
+
+	"github.com/Skarlso/acquia-beemo/internal"
+
 	"github.com/labstack/echo/v4"
 )
+
+// GithubRepoService is an interface defining the Wrapper Interface
+// needed to test the github client.
+type MockGithubIssuesService struct {
+	Err      error
+	Response *github.Response
+	Labels   []*github.Label
+	Owner    string
+	Repo     string
+}
+
+func (mis *MockGithubIssuesService) AddLabelsToIssue(ctx context.Context, owner string, repo string, number int, labels []string) ([]*github.Label, *github.Response, error) {
+	if owner != mis.Owner {
+		return nil, nil, errors.New("owner did not equal expected owner: was: " + owner)
+	}
+	if repo != mis.Repo {
+		return nil, nil, errors.New("repo did not equal expected repo: was: " + repo)
+	}
+	return mis.Labels, mis.Response, mis.Err
+}
 
 func TestGitWebHook(t *testing.T) {
 	_ = os.Setenv("GITHUB_WEBHOOK_SECRET", "superawesomesecretgithubpassword")
 	e := echo.New()
+	mis := new(MockGithubIssuesService)
+	mis.Owner = "Codertocat"
+	mis.Repo = "Hello-World"
+	internal.MockIssueService = mis
 	t.Run("successfully extracting PR information from payload", func(t *testing.T) {
 		payload, _ := ioutil.ReadFile(filepath.Join("test_data", "payload_sample.json"))
 		req := httptest.NewRequest(echo.POST, "/githook", bytes.NewBuffer(payload))
