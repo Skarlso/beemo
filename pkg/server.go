@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+// Serve will start the echo server listening for webhooks.
 func Serve() error {
 	log.Println("Starting listener...")
 	// Echo instance

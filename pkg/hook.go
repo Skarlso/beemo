@@ -92,6 +92,7 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 
 // GitWebHook handles callbacks from GitHub's webhook system.
 func GitWebHook(c echo.Context) error {
+	LogDebug("[DEBUG] Received request from: ", c.Request().UserAgent())
 	secret := os.Getenv("GITHUB_WEBHOOK_SECRET")
 	if secret == "" {
 		return c.String(http.StatusBadRequest, "GITHUB_WEBHOOK_SECRET is empty")
