@@ -10,10 +10,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// NewGithubClient creates a wrapper around the github client. This is
-// needed in order to decouple gaia from github client to be
-// able to unit test createGithubWebhook and ultimately have
-// the ability to replace github with anything else.
+// NewGithubClient creates a wrapper around the github client.
 func NewGithubClient(httpClient *http.Client) *github.Client {
 	return github.NewClient(httpClient)
 }
