@@ -12,6 +12,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Skarlso/acquia-beemo/internal"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -31,12 +33,24 @@ type PullRequest struct {
 	IssueURL string `json:"issue_url"`
 }
 
+// Owner is the owner of the repository.
+type Owner struct {
+	Login string `json:"login"`
+}
+
+// Repository is information about the repository attached to the PR.
+type Repository struct {
+	Name  string `json:"name"`
+	Owner Owner  `json:"owner"`
+}
+
 // Payload contains information about the event like, user, commit id and so on.
 // All we care about for the sake of identification is the repository.
 type Payload struct {
 	Action string      `json:"action"`
 	Number int         `json:"number"`
 	PR     PullRequest `json:"pull_request"`
+	Repo   Repository  `json:"repository"`
 }
 
 const (
@@ -104,7 +118,7 @@ func parse(secret []byte, req *http.Request) (Hook, error) {
 
 // GitWebHook handles callbacks from GitHub's webhook system.
 func GitWebHook(c echo.Context) error {
-	LogDebug("[DEBUG] Received request from: ", c.Request().UserAgent())
+	internal.LogDebug("[DEBUG] Received request from: ", c.Request().UserAgent())
 	secret := os.Getenv("GITHUB_WEBHOOK_SECRET")
 	if secret == "" {
 		return c.String(http.StatusBadRequest, "GITHUB_WEBHOOK_SECRET is empty")
@@ -127,6 +141,11 @@ func GitWebHook(c echo.Context) error {
 	}
 
 	log.Printf("Received: PR Number: %d, IssueURL: %s\n", p.Number, p.PR.IssueURL)
+
+	err = internal.AddLabel(p.Repo.Owner.Login, p.Repo.Name, p.Number)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
 
 	return c.String(http.StatusOK, "successfully processed event")
 }
