@@ -11,6 +11,21 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// Labeler defines a service which can add a label to a pull request.
+type Labeler interface {
+	AddLabel(string, string, int) error
+}
+
+// GithubLabeler is a concrete implementation of a Labeler that provides
+// Github labelling capabilities.
+type GithubLabeler struct {
+}
+
+// NewGithubLabeler returns a concrete github label implementation.
+func NewGithubLabeler() Labeler {
+	return GithubLabeler{}
+}
+
 // IssuesService is an interface defining the Wrapper Interface
 // needed to test the github client.
 type IssuesService interface {
@@ -46,7 +61,7 @@ func NewGithubClient(httpClient *http.Client) GithubClient {
 }
 
 // AddLabel adds certain labels to a PR given an issueUrl point to the PR.
-func AddLabel(owner, repo string, number int) error {
+func (GithubLabeler) AddLabel(owner, repo string, number int) error {
 	LogDebug("Adding hook for issue number: ", number)
 	token := os.Getenv("GITHUB_OAUTH_TOKEN")
 	if token == "" {
@@ -57,7 +72,7 @@ func AddLabel(owner, repo string, number int) error {
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
-	client := NewGithubClient(tc)
+	client := github.NewClient(tc)
 	_, _, err := client.Issues.AddLabelsToIssue(ctx, owner, repo, number, []string{"good first issue"})
 	if err != nil {
 		return err

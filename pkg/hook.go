@@ -104,38 +104,40 @@ func parseRequest(secret []byte, req *http.Request) (Hook, error) {
 	return h, err
 }
 
-// GitWebHook handles callbacks from GitHub's webhook system.
-func GitWebHook(c echo.Context) error {
-	internal.LogDebug("[DEBUG] Received request from: ", c.Request().UserAgent())
-	secret := os.Getenv("GITHUB_WEBHOOK_SECRET")
-	if secret == "" {
-		return c.String(http.StatusBadRequest, "GITHUB_WEBHOOK_SECRET is empty")
+// GitWebHook creates a hook handler with an injected labeler.
+func GitWebHook(labeler internal.Labeler) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		internal.LogDebug("[DEBUG] Received request from: ", c.Request().UserAgent())
+		secret := os.Getenv("GITHUB_WEBHOOK_SECRET")
+		if secret == "" {
+			return c.String(http.StatusBadRequest, "GITHUB_WEBHOOK_SECRET is empty")
+		}
+
+		h, err := parseRequest([]byte(secret), c.Request())
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		if h.Event == Ping {
+			return c.NoContent(http.StatusOK)
+		}
+
+		c.Request().Header.Set("Content-type", "application/json")
+
+		p := new(Payload)
+		if err := json.Unmarshal(h.Payload, p); err != nil {
+			return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
+		}
+
+		if p.Action != "opened" {
+			return c.String(http.StatusOK, "skipped; status was not opened but: "+p.Action)
+		}
+
+		err = labeler.AddLabel(p.Repo.Owner.Login, p.Repo.Name, p.Number)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		return c.String(http.StatusOK, "successfully processed event")
 	}
-
-	h, err := parseRequest([]byte(secret), c.Request())
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	if h.Event == Ping {
-		return c.NoContent(http.StatusOK)
-	}
-
-	c.Request().Header.Set("Content-type", "application/json")
-
-	p := new(Payload)
-	if err := json.Unmarshal(h.Payload, p); err != nil {
-		return c.String(http.StatusBadRequest, "error in unmarshalling json payload")
-	}
-
-	if p.Action != "opened" {
-		return c.String(http.StatusOK, "skipped; status was not opened but: "+p.Action)
-	}
-
-	err = internal.AddLabel(p.Repo.Owner.Login, p.Repo.Name, p.Number)
-	if err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
-	}
-
-	return c.String(http.StatusOK, "successfully processed event")
 }

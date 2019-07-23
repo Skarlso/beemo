@@ -2,8 +2,6 @@ package pkg
 
 import (
 	"bytes"
-	"context"
-	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,38 +10,20 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Skarlso/acquia-beemo/internal"
-	"github.com/google/go-github/github"
 	"github.com/labstack/echo/v4"
 )
 
-// GithubRepoService is an interface defining the Wrapper Interface
-// needed to test the github client.
-type MockGithubIssuesService struct {
-	Err      error
-	Response *github.Response
-	Labels   []*github.Label
-	Owner    string
-	Repo     string
+type MockAdder struct {
 }
 
-func (mis *MockGithubIssuesService) AddLabelsToIssue(ctx context.Context, owner string, repo string, number int, labels []string) ([]*github.Label, *github.Response, error) {
-	if owner != mis.Owner {
-		return nil, nil, errors.New("owner did not equal expected owner: was: " + owner)
-	}
-	if repo != mis.Repo {
-		return nil, nil, errors.New("repo did not equal expected repo: was: " + repo)
-	}
-	return mis.Labels, mis.Response, mis.Err
+func (MockAdder) AddLabel(owner, repo string, number int) error {
+	return nil
 }
 
 func TestGitWebHook(t *testing.T) {
 	_ = os.Setenv("GITHUB_WEBHOOK_SECRET", "superawesomesecretgithubpassword")
 	e := echo.New()
-	mis := new(MockGithubIssuesService)
-	mis.Owner = "Codertocat"
-	mis.Repo = "Hello-World"
-	internal.MockIssueService = mis
+	mockAdder := new(MockAdder)
 	t.Run("successfully extracting PR information from payload", func(t *testing.T) {
 		payload, _ := ioutil.ReadFile(filepath.Join("test_data", "payload_sample.json"))
 		req := httptest.NewRequest(echo.POST, "/githook", bytes.NewBuffer(payload))
@@ -56,8 +36,9 @@ func TestGitWebHook(t *testing.T) {
 		req.Header.Set("X-github-delivery", "1234asdf")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
+		gitWebHook := GitWebHook(mockAdder)
 
-		_ = GitWebHook(c)
+		_ = gitWebHook(c)
 
 		if rec.Code != http.StatusOK {
 			body, _ := ioutil.ReadAll(rec.Body)
@@ -77,8 +58,9 @@ func TestGitWebHook(t *testing.T) {
 		req.Header.Set("X-github-delivery", "1234asdf")
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
+		gitWebHook := GitWebHook(mockAdder)
 
-		_ = GitWebHook(c)
+		_ = gitWebHook(c)
 
 		if rec.Code != http.StatusBadRequest {
 			body, _ := ioutil.ReadAll(rec.Body)
