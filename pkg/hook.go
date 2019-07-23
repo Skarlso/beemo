@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/Skarlso/acquia-beemo/internal"
-
 	"github.com/labstack/echo/v4"
 )
 
@@ -45,7 +44,7 @@ type Payload struct {
 const (
 	// Ping event name.
 	Ping = "ping"
-	// PullRequest event name.
+	// PR event name.
 	PR = "pull_request"
 )
 

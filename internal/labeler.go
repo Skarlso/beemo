@@ -11,7 +11,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// GithubRepoService is an interface defining the Wrapper Interface
+// IssuesService is an interface defining the Wrapper Interface
 // needed to test the github client.
 type IssuesService interface {
 	AddLabelsToIssue(ctx context.Context, owner string, repo string, number int, labels []string) ([]*github.Label, *github.Response, error)

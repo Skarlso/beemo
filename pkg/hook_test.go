@@ -12,10 +12,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/google/go-github/github"
-
 	"github.com/Skarlso/acquia-beemo/internal"
-
+	"github.com/google/go-github/github"
 	"github.com/labstack/echo/v4"
 )
 
