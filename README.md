@@ -1,2 +1,5 @@
+![logo](./img/logo.png)
+
 # Beemo
-Updater
+
+A highly configurable automatic PR labeler Bot written in Go.
