@@ -39,7 +39,7 @@ func Serve() error {
 			return errors.New("cache dir must be provided if autoTLS is enabled")
 		}
 		e.Pre(middleware.HTTPSRedirect())
-		e.AutoTLSManager.Cache = autocert.DirCache("/var/www/.cache")
+		e.AutoTLSManager.Cache = autocert.DirCache(Opts.CacheDir)
 		return e.StartAutoTLS(hostPort)
 	}
 	// Start regular server
