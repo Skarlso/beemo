@@ -1,2 +1,2 @@
-# acquia-beemo
+# Beemo
 Updater
