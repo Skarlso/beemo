@@ -1,4 +1,4 @@
-module github.com/Skarlso/acquia-beemo
+module github.com/Skarlso/beemo
 
 go 1.12
 

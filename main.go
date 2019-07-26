@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/Skarlso/acquia-beemo/internal"
-	"github.com/Skarlso/acquia-beemo/pkg"
+	"github.com/Skarlso/beemo/internal"
+	"github.com/Skarlso/beemo/pkg"
 )
 
 func init() {

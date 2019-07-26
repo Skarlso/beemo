@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Skarlso/acquia-beemo/internal"
+	"github.com/Skarlso/beemo/internal"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/crypto/acme/autocert"

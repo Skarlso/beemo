@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Skarlso/acquia-beemo/internal"
+	"github.com/Skarlso/beemo/internal"
 	"github.com/labstack/echo/v4"
 )
 
